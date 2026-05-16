@@ -18,6 +18,7 @@ const getRoleMenuItems = (t) => ({
         { icon: Video, label: t('dashboard:sidebar.litigant.hearings'), path: '/litigant/hearings' },
         { icon: MessageSquare, label: t('dashboard:sidebar.litigant.lawyerChat'), path: '/litigant/chat' },
         { icon: Search, label: t('dashboard:sidebar.litigant.forensicAnalysis'), path: '/litigant/forensics' },
+        { icon: FileText, label: t('dashboard:sidebar.litigant.generateDocument'), path: '/litigant/generate-document' },
         { icon: User, label: t('dashboard:sidebar.litigant.profile'), path: '/litigant/profile' }
     ],
     LAWYER: [
