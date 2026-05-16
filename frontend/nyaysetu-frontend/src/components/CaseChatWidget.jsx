@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, X, MessageSquare, Loader2, MinusCircle, Maximize2, Minimize2, Sparkles } from 'lucide-react';
+import { Send, X, Loader2, Maximize2, Minimize2, Sparkles, Copy } from 'lucide-react';
 import { vakilFriendAPI } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,6 +12,7 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
     const [sessionId, setSessionId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
+
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -37,11 +38,14 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
         try {
             setIsStarting(true);
             const response = await vakilFriendAPI.startCaseSession(caseId);
+
             setSessionId(response.data.sessionId);
+
             setMessages([{
                 role: 'assistant',
                 content: response.data.message || `I am ready to help with case: **${caseTitle}**`
             }]);
+
         } catch (error) {
             console.error("Failed to start case chat:", error);
             setMessages([{
@@ -58,15 +62,18 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
 
         const userMsg = inputMessage.trim();
         setInputMessage('');
+
         setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
         setIsLoading(true);
 
         try {
             const response = await vakilFriendAPI.sendMessage(sessionId, userMsg);
+
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: response.data.message
             }]);
+
         } catch (error) {
             console.error("Failed to send message:", error);
             setMessages(prev => [...prev, {
@@ -75,6 +82,14 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
             }]);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const copyToClipboard = async (text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (err) {
+            console.error("Copy failed:", err);
         }
     };
 
@@ -98,17 +113,10 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
                     background: 'var(--color-primary)',
                     color: 'white',
                     border: 'none',
-                    boxShadow: '0 4px 20px rgba(30, 42, 68, 0.4)',
                     cursor: 'pointer',
-                    zIndex: 9999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'transform 0.2s'
+                    zIndex: 9999
                 }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                title="Ask Nyay Saarthi about this case"
+                title="Ask AI Assistant"
             >
                 <Sparkles size={28} />
             </button>
@@ -122,136 +130,112 @@ export default function CaseChatWidget({ caseId, caseTitle }) {
             right: '2rem',
             width: isMinimized ? '300px' : '400px',
             height: isMinimized ? 'auto' : '600px',
-            maxHeight: '80vh',
             background: 'var(--bg-glass-strong)',
-            backdropFilter: 'var(--glass-blur)',
-            border: 'var(--border-glass-strong)',
             borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-            zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            transition: 'all 0.3s ease'
+            zIndex: 9999
         }}>
-            {/* Header */}
+
+            {/* HEADER */}
             <div style={{
                 padding: '1rem',
                 background: 'var(--color-primary)',
                 color: 'white',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderTopLeftRadius: '1rem',
-                borderTopRightRadius: '1rem'
+                justifyContent: 'space-between'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Sparkles size={20} color="white" />
-                    <div>
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: 'white' }}>Nyay Saarthi</h3>
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)' }}>AI Case Assistant</p>
-                    </div>
+                <div>
+                    <strong>Nyay Saarthi</strong>
+                    <div style={{ fontSize: '0.75rem' }}>AI Case Assistant</div>
                 </div>
+
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                        onClick={() => setIsMinimized(!isMinimized)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}
-                    >
+                    <button onClick={() => setIsMinimized(!isMinimized)}>
                         {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
                     </button>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}
-                    >
-                        <X size={18} />
+                    <button onClick={() => setIsOpen(false)}>
+                        <X size={16} />
                     </button>
                 </div>
             </div>
 
-            {/* Chat Area */}
+            {/* CHAT */}
             {!isMinimized && (
                 <>
                     <div style={{
                         flex: 1,
                         padding: '1rem',
                         overflowY: 'auto',
-                        background: 'transparent',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '1rem'
                     }}>
                         {isStarting ? (
-                            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                                <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                            </div>
+                            <Loader2 className="animate-spin" />
                         ) : (
                             messages.map((msg, idx) => (
-                                <div key={idx} style={{
-                                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                    maxWidth: '85%',
-                                    background: msg.role === 'user' ? 'var(--color-accent)' : 'var(--bg-white)',
-                                    color: msg.role === 'user' ? 'white' : 'var(--text-main)',
-                                    padding: '0.75rem 1rem',
-                                    borderRadius: '1rem',
-                                    borderBottomRightRadius: msg.role === 'user' ? '0.25rem' : '1rem',
-                                    borderBottomLeftRadius: msg.role === 'user' ? '1rem' : '0.25rem',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.5',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                }}>
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                <div
+                                    key={idx}
+                                    style={{
+                                        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                        maxWidth: '85%',
+                                        padding: '0.75rem',
+                                        borderRadius: '1rem',
+                                        background: msg.role === 'user' ? '#2563eb' : '#fff',
+                                        color: msg.role === 'user' ? '#fff' : '#000',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    {/* MESSAGE TEXT */}
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {msg.content}
+                                    </ReactMarkdown>
+
+                                    {/* COPY BUTTON (ONLY AI) */}
+                                    {msg.role === 'assistant' && (
+                                        <button
+                                            onClick={() => copyToClipboard(msg.content)}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 5,
+                                                right: 5,
+                                                background: 'transparent',
+                                                border: 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                            title="Copy"
+                                        >
+                                            <Copy size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         )}
-                        {isLoading && (
-                            <div style={{ alignSelf: 'flex-start', background: 'var(--bg-white)', padding: '0.75rem 1rem', borderRadius: '1rem', borderBottomLeftRadius: '0.25rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-secondary)' }} />
-                            </div>
-                        )}
+
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input Area */}
+                    {/* INPUT */}
                     <div style={{
                         padding: '1rem',
-                        borderTop: 'var(--border-glass)',
-                        background: 'var(--bg-glass-strong)',
                         display: 'flex',
                         gap: '0.5rem'
                     }}>
                         <input
-                            type="text"
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyPress}
                             placeholder="Ask about this case..."
-                            disabled={isLoading || isStarting}
                             style={{
                                 flex: 1,
                                 padding: '0.75rem',
-                                borderRadius: '0.5rem',
-                                border: 'var(--border-glass)',
-                                background: 'var(--bg-white)',
-                                color: 'var(--text-main)',
-                                outline: 'none'
+                                borderRadius: '0.5rem'
                             }}
                         />
-                        <button
-                            onClick={sendMessage}
-                            disabled={isLoading || isStarting || !inputMessage.trim()}
-                            style={{
-                                background: 'var(--color-accent)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '0.5rem',
-                                padding: '0.75rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                opacity: (isLoading || isStarting || !inputMessage.trim()) ? 0.5 : 1
-                            }}
-                        >
+
+                        <button onClick={sendMessage} disabled={isLoading}>
                             <Send size={18} />
                         </button>
                     </div>
