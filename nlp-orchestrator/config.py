@@ -55,6 +55,7 @@ def _bool(name: str, default: bool) -> bool:
 
 RETRIEVAL_ENABLED: bool = _bool("RETRIEVAL_ENABLED", True)
 RERANKER_ENABLED: bool = _bool("RERANKER_ENABLED", True)
+GROUND_RESEARCH: bool = _bool("GROUND_RESEARCH", True)
 
 # ─── Validate ─────────────────────────────────────────────────────────────────
 if not GROQ_API_KEY:
